@@ -1,0 +1,594 @@
+{
+  "version": "1.0.0",
+  "description": "Example ABAC Policies - True Attribute-Based Access Control",
+  "metadata": {
+    "created": "2024-01-01T00:00:00Z",
+    "author": "ABAC Engine",
+    "notes": "These policies demonstrate true ABAC without role dependencies"
+  },
+  "policies": [
+    {
+      "id": "document-ownership-access",
+      "version": "1.0.0",
+      "description": "Users can access documents they own",
+      "effect": "Permit",
+      "condition": {
+        "operator": "equals",
+        "left": {
+          "category": "subject",
+          "attributeId": "id"
+        },
+        "right": {
+          "category": "resource",
+          "attributeId": "owner"
+        }
+      },
+      "obligations": [
+        {
+          "id": "log-ownership-access",
+          "type": "log",
+          "parameters": {
+            "reason": "ownership_access",
+            "level": "info"
+          }
+        }
+      ]
+    },
+    {
+      "id": "department-clearance-access",
+      "version": "1.0.0",
+      "description": "Department members can access documents with sufficient clearance",
+      "effect": "Permit",
+      "condition": {
+        "operator": "and",
+        "conditions": [
+          {
+            "operator": "equals",
+            "left": {
+              "category": "subject",
+              "attributeId": "department"
+            },
+            "right": {
+              "category": "resource",
+              "attributeId": "department"
+            }
+          },
+          {
+            "operator": "greater_than",
+            "left": {
+              "category": "subject",
+              "attributeId": "clearanceLevel"
+            },
+            "right": {
+              "category": "resource",
+              "attributeId": "classificationLevel"
+            }
+          },
+          {
+            "operator": "equals",
+            "left": {
+              "category": "resource",
+              "attributeId": "status"
+            },
+            "right": "published"
+          }
+        ]
+      },
+      "obligations": [
+        {
+          "id": "log-department-access",
+          "type": "log",
+          "parameters": {
+            "reason": "department_clearance_access"
+          }
+        }
+      ]
+    },
+    {
+      "id": "business-hours-restriction",
+      "version": "1.0.0",
+      "description": "Sensitive operations only allowed during business hours",
+      "effect": "Deny",
+      "target": {
+        "action": {
+          "operator": "in",
+          "left": {
+            "category": "action",
+            "attributeId": "id"
+          },
+          "right": ["create", "update", "delete"]
+        },
+        "resource": {
+          "operator": "in",
+          "left": {
+            "category": "resource",
+            "attributeId": "sensitivity"
+          },
+          "right": ["confidential", "secret"]
+        }
+      },
+      "condition": {
+        "function": "is_outside_business_hours",
+        "args": [
+          {
+            "category": "environment",
+            "attributeId": "currentTime"
+          }
+        ]
+      },
+      "advice": [
+        {
+          "id": "business-hours-warning",
+          "type": "warning",
+          "parameters": {
+            "message": "Sensitive operations restricted outside business hours"
+          }
+        }
+      ]
+    },
+    {
+      "id": "contractor-time-restriction",
+      "version": "1.0.0",
+      "description": "Contractors have time-based access restrictions",
+      "effect": "Deny",
+      "condition": {
+        "operator": "and",
+        "conditions": [
+          {
+            "operator": "equals",
+            "left": {
+              "category": "subject",
+              "attributeId": "employeeType"
+            },
+            "right": "contractor"
+          },
+          {
+            "operator": "or",
+            "conditions": [
+              {
+                "function": "is_outside_business_hours",
+                "args": [
+                  {
+                    "category": "environment",
+                    "attributeId": "currentTime"
+                  }
+                ]
+              },
+              {
+                "function": "is_weekend",
+                "args": [
+                  {
+                    "category": "environment",
+                    "attributeId": "currentTime"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "obligations": [
+        {
+          "id": "log-contractor-restriction",
+          "type": "log",
+          "parameters": {
+            "reason": "contractor_time_restriction",
+            "level": "warning"
+          }
+        }
+      ]
+    },
+    {
+      "id": "location-based-access",
+      "version": "1.0.0",
+      "description": "Classified documents require secure facility access",
+      "effect": "Permit",
+      "target": {
+        "resource": {
+          "operator": "equals",
+          "left": {
+            "category": "resource",
+            "attributeId": "classification"
+          },
+          "right": "classified"
+        }
+      },
+      "condition": {
+        "operator": "and",
+        "conditions": [
+          {
+            "operator": "greater_than",
+            "left": {
+              "category": "subject",
+              "attributeId": "clearanceLevel"
+            },
+            "right": 4
+          },
+          {
+            "operator": "equals",
+            "left": {
+              "category": "environment",
+              "attributeId": "location"
+            },
+            "right": "secure_facility"
+          },
+          {
+            "operator": "in",
+            "left": {
+              "category": "action",
+              "attributeId": "id"
+            },
+            "right": ["read", "view"]
+          }
+        ]
+      },
+      "obligations": [
+        {
+          "id": "log-classified-access",
+          "type": "log",
+          "parameters": {
+            "reason": "classified_document_access",
+            "level": "audit",
+            "requiresApproval": true
+          }
+        },
+        {
+          "id": "notify-security",
+          "type": "notify",
+          "parameters": {
+            "recipients": ["security@company.com"],
+            "message": "Classified document accessed",
+            "priority": "high"
+          }
+        }
+      ]
+    },
+    {
+      "id": "project-team-access",
+      "version": "1.0.0",
+      "description": "Project team members can access project resources",
+      "effect": "Permit",
+      "target": {
+        "resource": {
+          "operator": "equals",
+          "left": {
+            "category": "resource",
+            "attributeId": "type"
+          },
+          "right": "project_document"
+        }
+      },
+      "condition": {
+        "operator": "and",
+        "conditions": [
+          {
+            "function": "is_project_team_member",
+            "args": [
+              {
+                "category": "subject",
+                "attributeId": "id"
+              },
+              {
+                "category": "resource",
+                "attributeId": "projectId"
+              }
+            ]
+          },
+          {
+            "operator": "in",
+            "left": {
+              "category": "resource",
+              "attributeId": "status"
+            },
+            "right": ["active", "review", "approved"]
+          },
+          {
+            "function": "has_required_training",
+            "args": [
+              {
+                "category": "subject",
+                "attributeId": "id"
+              },
+              {
+                "category": "resource",
+                "attributeId": "requiredTraining"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "temporal-access-window",
+      "version": "1.0.0",
+      "description": "Time-bound access for temporary personnel",
+      "effect": "Permit",
+      "condition": {
+        "operator": "and",
+        "conditions": [
+          {
+            "operator": "equals",
+            "left": {
+              "category": "subject",
+              "attributeId": "temporaryAccess"
+            },
+            "right": true
+          },
+          {
+            "operator": "greater_than_or_equal",
+            "left": {
+              "category": "environment",
+              "attributeId": "currentTime"
+            },
+            "right": {
+              "category": "subject",
+              "attributeId": "accessStartDate"
+            }
+          },
+          {
+            "operator": "less_than_or_equal",
+            "left": {
+              "category": "environment",
+              "attributeId": "currentTime"
+            },
+            "right": {
+              "category": "subject",
+              "attributeId": "accessEndDate"
+            }
+          }
+        ]
+      },
+      "advice": [
+        {
+          "id": "temporary-access-warning",
+          "type": "warning",
+          "parameters": {
+            "message": "Temporary access granted - expires on specified date"
+          }
+        }
+      ]
+    },
+    {
+      "id": "data-classification-policy",
+      "version": "1.0.0",
+      "description": "Multi-level data classification access control",
+      "effect": "Permit",
+      "condition": {
+        "operator": "or",
+        "conditions": [
+          {
+            "operator": "and",
+            "conditions": [
+              {
+                "operator": "equals",
+                "left": {
+                  "category": "resource",
+                  "attributeId": "dataClassification"
+                },
+                "right": "public"
+              },
+              {
+                "operator": "equals",
+                "left": {
+                  "category": "action",
+                  "attributeId": "id"
+                },
+                "right": "read"
+              }
+            ]
+          },
+          {
+            "operator": "and",
+            "conditions": [
+              {
+                "operator": "equals",
+                "left": {
+                  "category": "resource",
+                  "attributeId": "dataClassification"
+                },
+                "right": "internal"
+              },
+              {
+                "operator": "equals",
+                "left": {
+                  "category": "subject",
+                  "attributeId": "employeeStatus"
+                },
+                "right": "active"
+              },
+              {
+                "operator": "in",
+                "left": {
+                  "category": "action",
+                  "attributeId": "id"
+                },
+                "right": ["read", "download"]
+              }
+            ]
+          },
+          {
+            "operator": "and",
+            "conditions": [
+              {
+                "operator": "equals",
+                "left": {
+                  "category": "resource",
+                  "attributeId": "dataClassification"
+                },
+                "right": "confidential"
+              },
+              {
+                "operator": "equals",
+                "left": {
+                  "category": "subject",
+                  "attributeId": "department"
+                },
+                "right": {
+                  "category": "resource",
+                  "attributeId": "ownerDepartment"
+                }
+              },
+              {
+                "operator": "greater_than",
+                "left": {
+                  "category": "subject",
+                  "attributeId": "clearanceLevel"
+                },
+                "right": 2
+              }
+            ]
+          }
+        ]
+      },
+      "obligations": [
+        {
+          "id": "log-data-access",
+          "type": "log",
+          "parameters": {
+            "reason": "data_classification_access"
+          }
+        }
+      ]
+    },
+    {
+      "id": "emergency-override",
+      "version": "1.0.0",
+      "description": "Emergency access overrides normal restrictions",
+      "effect": "Permit",
+      "priority": 1000,
+      "condition": {
+        "operator": "and",
+        "conditions": [
+          {
+            "function": "is_emergency_mode",
+            "args": []
+          },
+          {
+            "operator": "in",
+            "left": {
+              "category": "subject",
+              "attributeId": "emergencyRole"
+            },
+            "right": ["incident_commander", "emergency_responder", "system_admin"]
+          }
+        ]
+      },
+      "obligations": [
+        {
+          "id": "log-emergency-access",
+          "type": "log",
+          "parameters": {
+            "reason": "emergency_override",
+            "level": "critical",
+            "requiresReview": true
+          }
+        },
+        {
+          "id": "notify-emergency-access",
+          "type": "notify",
+          "parameters": {
+            "recipients": ["security@company.com", "ciso@company.com"],
+            "message": "Emergency access override activated",
+            "priority": "critical"
+          }
+        }
+      ],
+      "advice": [
+        {
+          "id": "emergency-access-warning",
+          "type": "warning",
+          "parameters": {
+            "message": "Emergency access granted - all actions will be audited"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ip-address-restriction",
+      "version": "1.0.0",
+      "description": "Restrict access based on IP address ranges",
+      "effect": "Deny",
+      "target": {
+        "resource": {
+          "operator": "in",
+          "left": {
+            "category": "resource",
+            "attributeId": "sensitivity"
+          },
+          "right": ["confidential", "secret", "classified"]
+        }
+      },
+      "condition": {
+        "operator": "not",
+        "conditions": [
+          {
+            "function": "ip_in_range",
+            "args": [
+              {
+                "category": "environment",
+                "attributeId": "ipAddress"
+              },
+              "192.168.1.0/24"
+            ]
+          }
+        ]
+      },
+      "obligations": [
+        {
+          "id": "log-ip-restriction",
+          "type": "log",
+          "parameters": {
+            "reason": "ip_address_restriction",
+            "level": "security"
+          }
+        }
+      ]
+    },
+    {
+      "id": "device-trust-requirement",
+      "version": "1.0.0",
+      "description": "High-security resources require trusted devices",
+      "effect": "Deny",
+      "target": {
+        "resource": {
+          "operator": "greater_than",
+          "left": {
+            "category": "resource",
+            "attributeId": "securityLevel"
+          },
+          "right": 3
+        }
+      },
+      "condition": {
+        "operator": "or",
+        "conditions": [
+          {
+            "operator": "not_equals",
+            "left": {
+              "category": "environment",
+              "attributeId": "deviceTrusted"
+            },
+            "right": true
+          },
+          {
+            "operator": "not_exists",
+            "left": {
+              "category": "environment",
+              "attributeId": "deviceCertificate"
+            },
+            "right": null
+          }
+        ]
+      },
+      "advice": [
+        {
+          "id": "device-trust-warning",
+          "type": "warning",
+          "parameters": {
+            "message": "Access denied - trusted device required for high-security resources"
+          }
+        }
+      ]
+    }
+  ]
+}

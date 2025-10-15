@@ -1,0 +1,143 @@
+{
+  "name": "abac-engine",
+  "version": "1.0.0",
+  "description": "True Attribute-Based Access Control (ABAC) engine for Node.js - Authorization decisions based purely on attributes",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "module": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "build:clean": "rm -rf dist && npm run build",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build:clean && npm run typecheck && npm test",
+    "prepack": "npm run build:clean",
+    "example:basic": "ts-node examples/abac/basicUsage.ts"
+  },
+  "keywords": [
+    "abac",
+    "attribute-based-access-control",
+    "authorization",
+    "access-control",
+    "security",
+    "permissions",
+    "policy-engine",
+    "pdp",
+    "pip",
+    "pap",
+    "xacml",
+    "fine-grained-access-control",
+    "contextual-authorization",
+    "dynamic-permissions",
+    "typescript",
+    "nodejs",
+    "security",
+    "nist-abac",
+    "policy-engine",
+    "attribute-based"
+  ],
+  "author": {
+    "name": "Jai Sachdeva",
+    "url": "https://github.com/astralstriker"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/astralstriker/abac-engine.git"
+  },
+  "homepage": "https://github.com/astralstriker/abac-engine#readme",
+  "bugs": {
+    "url": "https://github.com/astralstriker/abac-engine/issues"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "express": "^4.18.0 || ^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.23",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.0.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.0.0",
+    "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.3.0"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "POLICY_GUIDE.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=7.0.0"
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/src",
+      "<rootDir>/tests"
+    ],
+    "testMatch": [
+      "**/__tests__/**/*.ts",
+      "**/?(*.)+(spec|test).ts"
+    ],
+    "transform": {
+      "^.+\\.ts$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "src/**/*.ts",
+      "!src/**/*.d.ts",
+      "!src/**/index.ts"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": [
+      "html",
+      "text",
+      "lcov",
+      "json-summary"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 55,
+        "functions": 65,
+        "lines": 65,
+        "statements": 65
+      },
+      "./src/abac/attributeProviders.ts": {
+        "branches": 75,
+        "functions": 80,
+        "lines": 90,
+        "statements": 90
+      },
+      "./src/abac/engine.ts": {
+        "branches": 55,
+        "functions": 65,
+        "lines": 65,
+        "statements": 65
+      }
+    }
+  }
+}
