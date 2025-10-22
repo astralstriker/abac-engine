@@ -189,6 +189,9 @@ Thumbs.db
 temp-policies/
 *.backup
 
+# Marketing materials (private)
+marketing/
+
 # Documentation build
 docs/build/
 docs/dist/

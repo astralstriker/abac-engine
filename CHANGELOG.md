@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.1] - 2025-10-22
+
+### Bug fixes and improvements
+
+- fix(condition-builder): Accept `AttributeReference` as RHS for
+  `ConditionBuilder.in` so membership checks can be performed against another
+  attribute.
+- tests: Add unit tests covering `ConditionBuilder.in` with RHS as an
+  `AttributeReference`.
+- docs: Update `API_REFERENCE.md` to document that `in()` RHS may be an
+  `AttributeReference` and add examples for both array-literal and attribute-ref
+  usage.
+
+### Notes
+
+- Backward compatible: array-literal RHS remains supported.
+- Evaluation behavior unchanged: if the RHS attribute is missing or does not
+  resolve to an array, the `in` check evaluates as non-match (same as prior
+  behavior).
+
 ## [1.0.0] - Initial Release
 
 ### Core Features

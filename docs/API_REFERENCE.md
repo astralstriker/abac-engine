@@ -43,6 +43,7 @@ constructor(config: ABACEngineConfig)
 ```
 
 **Parameters:**
+
 - `config` - Engine configuration
 
 **Configuration Options:**
@@ -51,12 +52,12 @@ constructor(config: ABACEngineConfig)
 interface ABACEngineConfig {
   policies: ABACPolicy[];
   attributeProviders?: AttributeProvider[];
-  enableAuditLog?: boolean;              // Default: true
-  enablePerformanceMetrics?: boolean;    // Default: true
-  cacheResults?: boolean;                // Default: false
-  cacheTTL?: number;                     // Default: 300 (seconds)
-  maxEvaluationTime?: number;            // Default: 5000 (ms)
-  logger?: ILogger;                      // Default: SilentLogger
+  enableAuditLog?: boolean; // Default: true
+  enablePerformanceMetrics?: boolean; // Default: true
+  cacheResults?: boolean; // Default: false
+  cacheTTL?: number; // Default: 300 (seconds)
+  maxEvaluationTime?: number; // Default: 5000 (ms)
+  logger?: ILogger; // Default: SilentLogger
 }
 ```
 
@@ -88,6 +89,7 @@ async evaluate(
 ```
 
 **Parameters:**
+
 - `request` - The authorization request
 - `policies` - Optional policies to use (overrides config policies)
 
@@ -118,6 +120,7 @@ addAttributeProvider(provider: AttributeProvider): void
 ```
 
 **Parameters:**
+
 - `provider` - Attribute provider instance
 
 **Example:**
@@ -138,6 +141,7 @@ registerFunction(name: string, func: ConditionFunction): void
 ```
 
 **Parameters:**
+
 - `name` - Function name
 - `func` - Function implementation
 
@@ -193,6 +197,7 @@ getAuditLogs(limit?: number): ABACAccessLog[]
 ```
 
 **Parameters:**
+
 - `limit` - Optional maximum number of logs to return
 
 **Returns:** Array of audit log entries
@@ -238,6 +243,7 @@ static create(id: string): PolicyBuilder
 ```
 
 **Parameters:**
+
 - `id` - Unique policy identifier
 
 **Returns:** PolicyBuilder instance
@@ -288,6 +294,7 @@ version(version: string): PolicyBuilder
 ```
 
 **Parameters:**
+
 - `version` - Semantic version string
 
 **Returns:** `this` (for chaining)
@@ -295,10 +302,7 @@ version(version: string): PolicyBuilder
 **Example:**
 
 ```typescript
-PolicyBuilder.create('my-policy')
-  .version('2.0.0')
-  .permit()
-  .build();
+PolicyBuilder.create('my-policy').version('2.0.0').permit().build();
 ```
 
 ---
@@ -312,6 +316,7 @@ description(description: string): PolicyBuilder
 ```
 
 **Parameters:**
+
 - `description` - Human-readable description
 
 **Returns:** `this` (for chaining)
@@ -327,6 +332,7 @@ condition(condition: Condition): PolicyBuilder
 ```
 
 **Parameters:**
+
 - `condition` - Condition object or ConditionBuilder
 
 **Returns:** `this` (for chaining)
@@ -356,6 +362,7 @@ target(target: PolicyTarget): PolicyBuilder
 ```
 
 **Parameters:**
+
 - `target` - Target specification
 
 **Returns:** `this` (for chaining)
@@ -383,6 +390,7 @@ obligation(id: string, parameters?: Record<string, unknown>): PolicyBuilder
 ```
 
 **Parameters:**
+
 - `id` - Obligation identifier
 - `parameters` - Optional parameters
 
@@ -408,6 +416,7 @@ advice(id: string, parameters?: Record<string, unknown>): PolicyBuilder
 ```
 
 **Parameters:**
+
 - `id` - Advice identifier
 - `parameters` - Optional parameters
 
@@ -458,10 +467,7 @@ static equals(
 **Example:**
 
 ```typescript
-ConditionBuilder.equals(
-  AttributeRef.subject('department'),
-  'Engineering'
-)
+ConditionBuilder.equals(AttributeRef.subject('department'), 'Engineering');
 ```
 
 ---
@@ -496,7 +502,7 @@ static greaterThan(
 ConditionBuilder.greaterThan(
   AttributeRef.subject('clearanceLevel'),
   AttributeRef.resource('classification')
-)
+);
 ```
 
 ---
@@ -551,13 +557,32 @@ static in(
 ): ConditionBuilder
 ```
 
-**Example:**
+Note: the right-hand side (RHS) may be either a concrete array literal (e.g.
+`string[]`) or an `AttributeReference` that resolves to an array at evaluation
+time. This allows checking membership against another attribute (for example,
+checking if a resource id is contained in a subject attribute that holds an
+array of IDs).
+
+**Examples:**
+
+RHS as an array literal:
+
+```typescript
+ConditionBuilder.in(AttributeRef.subject('role'), [
+  'admin',
+  'editor',
+  'viewer'
+]);
+```
+
+RHS as an attribute reference (checks membership against another attribute that
+resolves to an array):
 
 ```typescript
 ConditionBuilder.in(
-  AttributeRef.subject('role'),
-  ['admin', 'editor', 'viewer']
-)
+  AttributeRef.resource('patientId'),
+  AttributeRef.subject('assignedPatients')
+);
 ```
 
 ---
@@ -589,10 +614,7 @@ static contains(
 **Example:**
 
 ```typescript
-ConditionBuilder.contains(
-  AttributeRef.subject('roles'),
-  'admin'
-)
+ConditionBuilder.contains(AttributeRef.subject('roles'), 'admin');
 ```
 
 ---
@@ -610,9 +632,7 @@ static exists(
 **Example:**
 
 ```typescript
-ConditionBuilder.exists(
-  AttributeRef.subject('mfaEnabled')
-)
+ConditionBuilder.exists(AttributeRef.subject('mfaEnabled'));
 ```
 
 ---
@@ -641,6 +661,7 @@ static function(
 ```
 
 **Parameters:**
+
 - `name` - Registered function name
 - `args` - Function arguments
 
@@ -650,7 +671,7 @@ static function(
 ConditionBuilder.function(
   'isBusinessHours',
   AttributeRef.environment('currentTime')
-)
+);
 ```
 
 ---
@@ -668,8 +689,9 @@ and(other: Condition | ConditionBuilder): ConditionBuilder
 **Example:**
 
 ```typescript
-ConditionBuilder.equals(AttributeRef.subject('dept'), 'Engineering')
-  .and(ConditionBuilder.greaterThan(AttributeRef.subject('level'), 3))
+ConditionBuilder.equals(AttributeRef.subject('dept'), 'Engineering').and(
+  ConditionBuilder.greaterThan(AttributeRef.subject('level'), 3)
+);
 ```
 
 ---
@@ -685,8 +707,9 @@ or(other: Condition | ConditionBuilder): ConditionBuilder
 **Example:**
 
 ```typescript
-ConditionBuilder.equals(AttributeRef.subject('role'), 'admin')
-  .or(ConditionBuilder.equals(AttributeRef.subject('role'), 'owner'))
+ConditionBuilder.equals(AttributeRef.subject('role'), 'admin').or(
+  ConditionBuilder.equals(AttributeRef.subject('role'), 'owner')
+);
 ```
 
 ---
@@ -704,7 +727,7 @@ static not(condition: Condition | ConditionBuilder): ConditionBuilder
 ```typescript
 ConditionBuilder.not(
   ConditionBuilder.equals(AttributeRef.subject('status'), 'suspended')
-)
+);
 ```
 
 ---
@@ -728,7 +751,7 @@ Fluent API for building policy targets.
 #### Constructor
 
 ```typescript
-constructor()
+constructor();
 ```
 
 #### Methods
@@ -744,9 +767,7 @@ withSubject(criteria: Record<string, AttributeValue>): TargetBuilder
 **Example:**
 
 ```typescript
-new TargetBuilder()
-  .withSubject({ type: 'user' })
-  .build();
+new TargetBuilder().withSubject({ type: 'user' }).build();
 ```
 
 ---
@@ -780,9 +801,7 @@ withAction(criteria: Record<string, AttributeValue>): TargetBuilder
 **Example:**
 
 ```typescript
-new TargetBuilder()
-  .withAction({ id: 'delete' })
-  .build();
+new TargetBuilder().withAction({ id: 'delete' }).build();
 ```
 
 ---
@@ -827,6 +846,7 @@ constructor(
 ```
 
 **Parameters:**
+
 - `category` - Attribute category
 - `name` - Provider name
 - `attributes` - Map of entity ID to attributes
@@ -840,11 +860,7 @@ const userAttrs = new Map([
   ['user-456', { department: 'Sales', level: 2 }]
 ]);
 
-const provider = new InMemoryAttributeProvider(
-  'subject',
-  'users',
-  userAttrs
-);
+const provider = new InMemoryAttributeProvider('subject', 'users', userAttrs);
 ```
 
 ---
@@ -870,6 +886,7 @@ constructor(
 ```
 
 **Parameters:**
+
 - `category` - Attribute category
 - `name` - Provider name
 - `config.connectionString` - Database connection string
@@ -915,6 +932,7 @@ constructor(
 ```
 
 **Parameters:**
+
 - `category` - Attribute category
 - `name` - Provider name
 - `config.endpoints` - Map of attribute IDs to API endpoints
@@ -930,7 +948,7 @@ const provider = new RestApiAttributeProvider('subject', 'api', {
     roles: 'https://api.example.com/users/{id}/roles'
   },
   headers: {
-    'Authorization': 'Bearer token123'
+    Authorization: 'Bearer token123'
   }
 });
 ```
@@ -958,6 +976,7 @@ constructor(
 ```
 
 **Parameters:**
+
 - `category` - Attribute category
 - `name` - Provider name
 - `config.url` - LDAP server URL
@@ -995,6 +1014,7 @@ constructor(
 ```
 
 **Parameters:**
+
 - `provider` - Base provider to wrap
 - `ttl` - Cache TTL in seconds (default: 300)
 
@@ -1024,6 +1044,7 @@ constructor(
 ```
 
 **Parameters:**
+
 - `category` - Attribute category
 - `name` - Provider name
 - `providers` - Array of providers
@@ -1052,7 +1073,7 @@ Registry for custom condition functions.
 #### Constructor
 
 ```typescript
-constructor()
+constructor();
 ```
 
 #### Methods
@@ -1066,6 +1087,7 @@ register(name: string, func: ConditionFunction): void
 ```
 
 **Parameters:**
+
 - `name` - Function name
 - `func` - Function implementation
 
@@ -1140,8 +1162,8 @@ constructor(config?: AuditServiceConfig)
 
 ```typescript
 interface AuditServiceConfig {
-  enabled?: boolean;        // Default: true
-  maxLogs?: number;         // Default: 10000
+  enabled?: boolean; // Default: true
+  maxLogs?: number; // Default: 10000
   includeDetails?: boolean; // Default: true
 }
 ```
@@ -1213,7 +1235,7 @@ Collects performance and usage metrics.
 #### Constructor
 
 ```typescript
-constructor()
+constructor();
 ```
 
 #### Methods
@@ -1271,8 +1293,8 @@ static subject(attributeId: string, path?: string): AttributeReference
 **Example:**
 
 ```typescript
-AttributeRef.subject('department')
-AttributeRef.subject('profile', 'attributes.profile')
+AttributeRef.subject('department');
+AttributeRef.subject('profile', 'attributes.profile');
 ```
 
 ---
@@ -1314,7 +1336,7 @@ static environment(attributeId: string, path?: string): AttributeReference
 Validate a single policy.
 
 ```typescript
-function validatePolicy(policy: ABACPolicy): PolicyValidationResult
+function validatePolicy(policy: ABACPolicy): PolicyValidationResult;
 ```
 
 **Returns:**
@@ -1344,7 +1366,7 @@ if (!result.valid) {
 Validate multiple policies.
 
 ```typescript
-function validatePolicies(policies: ABACPolicy[]): PolicyValidationResult[]
+function validatePolicies(policies: ABACPolicy[]): PolicyValidationResult[];
 ```
 
 ---
@@ -1354,7 +1376,7 @@ function validatePolicies(policies: ABACPolicy[]): PolicyValidationResult[]
 Validate and throw if invalid.
 
 ```typescript
-function validatePolicyOrThrow(policy: ABACPolicy): void
+function validatePolicyOrThrow(policy: ABACPolicy): void;
 ```
 
 **Throws:** `ValidationError` if validation fails
@@ -1368,9 +1390,7 @@ function validatePolicyOrThrow(policy: ABACPolicy): void
 Load policies from JSON file.
 
 ```typescript
-async function loadPoliciesFromFile(
-  filePath: string
-): Promise<ABACPolicy[]>
+async function loadPoliciesFromFile(filePath: string): Promise<ABACPolicy[]>;
 ```
 
 **Throws:** `PolicyStorageError` on failure
@@ -1382,12 +1402,10 @@ async function loadPoliciesFromFile(
 Load and validate policies from file.
 
 ```typescript
-async function loadAndValidatePoliciesFromFile(
-  filePath: string
-): Promise<{
+async function loadAndValidatePoliciesFromFile(filePath: string): Promise<{
   policies: ABACPolicy[];
   validationResults: PolicyValidationResult[];
-}>
+}>;
 ```
 
 **Throws:** `ValidationError` if validation fails
@@ -1399,7 +1417,7 @@ async function loadAndValidatePoliciesFromFile(
 Load policies from JSON string.
 
 ```typescript
-function loadPoliciesFromJSON(json: string): ABACPolicy[]
+function loadPoliciesFromJSON(json: string): ABACPolicy[];
 ```
 
 **Throws:** `PolicyStorageError` on parse failure
@@ -1482,10 +1500,7 @@ interface ABACDecision {
 ### Condition
 
 ```typescript
-type Condition =
-  | ComparisonCondition
-  | LogicalCondition
-  | FunctionCondition;
+type Condition = ComparisonCondition | LogicalCondition | FunctionCondition;
 
 interface ComparisonCondition {
   operator: ComparisonOperator;

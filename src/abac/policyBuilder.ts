@@ -112,9 +112,20 @@ export class ConditionBuilder {
 
   /**
    * Create an 'in' condition
+   *
+   * Accept either:
+   * - an AttributeReference on the right-hand side (e.g. checking membership against another attribute)
+   * - or an AttributeValue on the right-hand side (which may itself be an array like `string[]`)
+   *
+   * Examples:
+   * - ConditionBuilder.in(AttributeRef.subject('role'), ['admin', 'editor'])
+   * - ConditionBuilder.in(AttributeRef.resource('tags'), AttributeRef.subject('groups'))
    */
-  static in(left: AttributeReference | AttributeValue, right: AttributeValue[]): ConditionBuilder {
-    return ConditionBuilder.compare(left, ComparisonOperator.In, right as AttributeValue);
+  static in(
+    left: AttributeReference | AttributeValue,
+    right: AttributeReference | AttributeValue
+  ): ConditionBuilder {
+    return ConditionBuilder.compare(left, ComparisonOperator.In, right);
   }
 
   /**

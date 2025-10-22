@@ -76,13 +76,24 @@ describe('Policy Builder', () => {
       });
     });
 
-    test('should create in condition', () => {
+    test('should create in condition (array RHS)', () => {
       const condition = ConditionBuilder.in('value', ['value', 'other']).build();
 
       expect(condition).toEqual({
         operator: 'in',
         left: 'value',
         right: ['value', 'other']
+      });
+    });
+
+    test('should create in condition with RHS AttributeRef', () => {
+      const rhs = AttributeRef.subject('assignedPatients');
+      const condition = ConditionBuilder.in(AttributeRef.resource('patientId'), rhs).build();
+
+      expect(condition).toEqual({
+        operator: 'in',
+        left: AttributeRef.resource('patientId'),
+        right: rhs
       });
     });
 
