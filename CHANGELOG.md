@@ -2,6 +2,43 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2025-11-06
+
+### Added - Policy Persistence Features
+
+- **Export Functions** - New utilities for exporting policies to JSON strings
+  - `exportPolicyToJSON(policy, pretty?)` - Export single policy with optional
+    formatting
+  - `exportPoliciesToJSON(policies, pretty?)` - Export multiple policies as
+    array
+- **Save Functions** - New utilities for saving policies to files
+  - `savePolicyToFile(policy, filePath, pretty?)` - Save single policy to file
+  - `savePoliciesToFile(policies, filePath, pretty?)` - Save multiple policies
+    to file
+  - `saveAndValidatePolicyToFile(policy, filePath, pretty?)` - Save with
+    validation
+  - `saveAndValidatePoliciesToFile(policies, filePath, pretty?)` - Save multiple
+    with validation
+- **Comprehensive Tests** - Added 26 new tests covering all export/save
+  functionality
+- **Example** - New `policy-persistence.ts` example demonstrating all
+  persistence features
+- **Documentation** - Expanded README with comprehensive policy persistence
+  patterns including:
+  - Loading and saving policies
+  - Export/import workflows
+  - Version control strategies
+  - Hot reload patterns
+  - Database migration examples
+  - Caching best practices
+
+### Notes
+
+- All new functions are fully backward compatible
+- PAP (Policy Administration Point) remains user-managed and flexible
+- Policies are plain JSON objects, making them easily serializable
+- Save functions include optional validation to ensure policy integrity
+
 ## [1.0.1] - 2025-10-22
 
 ### Bug fixes and improvements

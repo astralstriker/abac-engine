@@ -189,6 +189,12 @@ Thumbs.db
 temp-policies/
 *.backup
 
+# Example generated files
+examples/abac/ownership-policy.json
+examples/abac/all-policies.json
+examples/abac/validated-ownership.json
+examples/abac/pattern-policies.json
+
 # Marketing materials (private)
 marketing/
 

@@ -70,13 +70,19 @@ export {
 
 // Policy loader utilities (optional helpers)
 export {
+  exportPoliciesToJSON,
+  exportPolicyToJSON,
   filterPoliciesByTarget,
   groupPoliciesByEffect,
   loadAndValidatePoliciesFromFile,
   loadPoliciesFromFile,
   loadPoliciesFromJSON,
   PolicyCache,
-  prismaAdapter
+  prismaAdapter,
+  saveAndValidatePoliciesToFile,
+  saveAndValidatePolicyToFile,
+  savePoliciesToFile,
+  savePolicyToFile
 } from './policyLoaders';
 
 // Services (Support services for cross-cutting concerns)

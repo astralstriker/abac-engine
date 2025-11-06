@@ -1,13 +1,151 @@
 /**
  * ABAC Policy Loader Utilities
  *
- * Optional helper functions for loading policies from common sources.
- * These are convenience utilities - users can load policies however they want.
+ * Optional helper functions for loading and saving policies from common sources.
+ * These are convenience utilities - users can load/save policies however they want.
  */
 
 import { PolicyStorageError, ValidationError } from './errors';
 import { PolicyValidationResult, validatePolicy } from './policyValidator';
 import { ABACPolicy } from './types';
+
+/**
+ * Export a single policy to JSON string
+ *
+ * @param policy - The policy to export
+ * @param pretty - Whether to format the JSON with indentation (default: true)
+ * @returns JSON string representation of the policy
+ */
+export function exportPolicyToJSON(policy: ABACPolicy, pretty = true): string {
+  return JSON.stringify(policy, null, pretty ? 2 : 0);
+}
+
+/**
+ * Export multiple policies to JSON string
+ *
+ * @param policies - The policies to export
+ * @param pretty - Whether to format the JSON with indentation (default: true)
+ * @returns JSON string representation of the policies array
+ */
+export function exportPoliciesToJSON(policies: ABACPolicy[], pretty = true): string {
+  return JSON.stringify(policies, null, pretty ? 2 : 0);
+}
+
+/**
+ * Save a single policy to a JSON file
+ *
+ * @param policy - The policy to save
+ * @param filePath - Path to the file where the policy should be saved
+ * @param pretty - Whether to format the JSON with indentation (default: true)
+ */
+export async function savePolicyToFile(
+  policy: ABACPolicy,
+  filePath: string,
+  pretty = true
+): Promise<void> {
+  try {
+    const fs = await import('fs/promises');
+    await fs.writeFile(filePath, exportPolicyToJSON(policy, pretty), 'utf-8');
+  } catch (error) {
+    throw new PolicyStorageError(
+      'save',
+      `Failed to save policy to ${filePath}`,
+      undefined,
+      error instanceof Error ? error : undefined
+    );
+  }
+}
+
+/**
+ * Save multiple policies to a JSON file
+ *
+ * @param policies - The policies to save
+ * @param filePath - Path to the file where the policies should be saved
+ * @param pretty - Whether to format the JSON with indentation (default: true)
+ */
+export async function savePoliciesToFile(
+  policies: ABACPolicy[],
+  filePath: string,
+  pretty = true
+): Promise<void> {
+  try {
+    const fs = await import('fs/promises');
+    await fs.writeFile(filePath, exportPoliciesToJSON(policies, pretty), 'utf-8');
+  } catch (error) {
+    throw new PolicyStorageError(
+      'save',
+      `Failed to save policies to ${filePath}`,
+      undefined,
+      error instanceof Error ? error : undefined
+    );
+  }
+}
+
+/**
+ * Save and validate a single policy to a JSON file
+ *
+ * @param policy - The policy to save
+ * @param filePath - Path to the file where the policy should be saved
+ * @param pretty - Whether to format the JSON with indentation (default: true)
+ * @throws ValidationError if the policy is invalid
+ */
+export async function saveAndValidatePolicyToFile(
+  policy: ABACPolicy,
+  filePath: string,
+  pretty = true
+): Promise<PolicyValidationResult> {
+  const validationResult = validatePolicy(policy);
+
+  if (!validationResult.valid) {
+    const validationErrors = validationResult.errors.map(err => ({
+      field: `${validationResult.policyId}.${err.path}`,
+      message: err.message
+    }));
+
+    throw new ValidationError('Policy validation failed', validationErrors, {
+      filePath,
+      failedPolicies: [validationResult.policyId]
+    });
+  }
+
+  await savePolicyToFile(policy, filePath, pretty);
+  return validationResult;
+}
+
+/**
+ * Save and validate multiple policies to a JSON file
+ *
+ * @param policies - The policies to save
+ * @param filePath - Path to the file where the policies should be saved
+ * @param pretty - Whether to format the JSON with indentation (default: true)
+ * @throws ValidationError if any policy is invalid
+ */
+export async function saveAndValidatePoliciesToFile(
+  policies: ABACPolicy[],
+  filePath: string,
+  pretty = true
+): Promise<PolicyValidationResult[]> {
+  const validationResults = policies.map(policy => validatePolicy(policy));
+  const errors = validationResults.filter(r => !r.valid);
+
+  if (errors.length > 0) {
+    const validationErrors = errors.flatMap(e =>
+      e.errors.map(err => ({
+        field: `${e.policyId}.${err.path}`,
+        message: err.message
+      }))
+    );
+
+    throw new ValidationError(
+      `Policy validation failed for ${errors.length} policy/policies`,
+      validationErrors,
+      { filePath, failedPolicies: errors.map(e => e.policyId) }
+    );
+  }
+
+  await savePoliciesToFile(policies, filePath, pretty);
+  return validationResults;
+}
 
 /**
  * Load policies from JSON file

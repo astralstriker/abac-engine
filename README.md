@@ -321,10 +321,90 @@ const engine = new ABACEngine({
 
 ## Policy Storage
 
-You manage policy storage using your preferred method. The engine just
-evaluates.
+You manage policy storage using your preferred method. The engine just evaluates
+policies - giving you complete flexibility in how you store and manage them
+(PAP).
 
-### With Prisma
+### Loading Policies
+
+#### From JSON Files
+
+```typescript
+import {
+  loadPoliciesFromFile,
+  loadAndValidatePoliciesFromFile
+} from 'abac-engine';
+
+// Basic load
+const policies = await loadPoliciesFromFile('./policies.json');
+
+// Load with automatic validation
+const { policies, validationResults } =
+  await loadAndValidatePoliciesFromFile('./policies.json');
+// Throws ValidationError if any policy is invalid
+```
+
+#### From JSON Strings
+
+```typescript
+import { loadPoliciesFromJSON } from 'abac-engine';
+
+const jsonString =
+  '[{"id": "policy-1", "version": "1.0.0", "effect": "Permit", ...}]';
+const policies = loadPoliciesFromJSON(jsonString);
+```
+
+### Saving Policies
+
+#### To JSON Files
+
+```typescript
+import {
+  savePolicyToFile,
+  savePoliciesToFile,
+  saveAndValidatePolicyToFile,
+  saveAndValidatePoliciesToFile
+} from 'abac-engine';
+
+// Save a single policy
+const policy = PolicyBuilder.create('my-policy')
+  .permit()
+  .condition(
+    ConditionBuilder.equals(Attributes.subject.id, Attributes.resource.owner)
+  )
+  .build();
+
+await savePolicyToFile(policy, './policies/my-policy.json');
+
+// Save multiple policies
+const policies = [policy1, policy2, policy3];
+await savePoliciesToFile(policies, './policies/all-policies.json');
+
+// Save with automatic validation (throws if invalid)
+await saveAndValidatePolicyToFile(policy, './policies/validated-policy.json');
+await saveAndValidatePoliciesToFile(
+  policies,
+  './policies/validated-policies.json'
+);
+```
+
+#### Export to JSON Strings
+
+```typescript
+import { exportPolicyToJSON, exportPoliciesToJSON } from 'abac-engine';
+
+// Export single policy (pretty-printed by default)
+const policyJson = exportPolicyToJSON(policy);
+console.log(policyJson);
+
+// Export without pretty-printing (compact)
+const compactJson = exportPolicyToJSON(policy, false);
+
+// Export multiple policies
+const policiesJson = exportPoliciesToJSON([policy1, policy2, policy3]);
+```
+
+### With Database (Prisma)
 
 ```typescript
 // schema.prisma
@@ -352,25 +432,90 @@ async function savePolicy(policy: ABACPolicy) {
   await prisma.abacPolicy.create({ data: policy });
 }
 
+// Load policies from database
+const dbPolicies = await prisma.abacPolicy.findMany();
+
 // Evaluate
-const decision = await engine.evaluate(request, policies);
+const decision = await engine.evaluate(request, dbPolicies);
 ```
 
-### With Files
+### Policy Persistence Patterns
+
+#### Version Control for Policies
 
 ```typescript
-import { loadPoliciesFromFile, validatePolicy } from 'abac-engine';
+import {
+  savePoliciesToFile,
+  loadAndValidatePoliciesFromFile
+} from 'abac-engine';
 
-// Load and validate
-const policies = await loadPoliciesFromFile('./policies.json');
-policies.forEach(p => {
-  const result = validatePolicy(p);
-  if (!result.valid) {
-    console.error(`Invalid policy ${p.id}:`, result.errors);
-  }
+// Save policies to version-controlled file
+const policies = [
+  PolicyPatterns.ownership(['read', 'update']),
+  PolicyPatterns.departmentAccess(['read'], ['public', 'internal'])
+];
+
+await savePoliciesToFile(policies, './config/policies.json');
+// Commit to git for versioning and review
+```
+
+#### Hot Reload Policies
+
+```typescript
+import { loadPoliciesFromFile } from 'abac-engine';
+import { watch } from 'fs';
+
+let currentPolicies: ABACPolicy[] = [];
+
+async function reloadPolicies() {
+  currentPolicies = await loadPoliciesFromFile('./policies.json');
+  console.log(`Loaded ${currentPolicies.length} policies`);
+}
+
+// Initial load
+await reloadPolicies();
+
+// Watch for changes
+watch('./policies.json', async () => {
+  await reloadPolicies();
 });
+```
 
-const decision = await engine.evaluate(request, policies);
+#### Migration: Export from Database to Files
+
+```typescript
+import { savePoliciesToFile } from 'abac-engine';
+
+// Export policies from database to file system
+async function exportPolicies() {
+  const policies = await prisma.abacPolicy.findMany();
+  await savePoliciesToFile(policies, './backup/policies.json', true);
+  console.log(`Exported ${policies.length} policies`);
+}
+
+await exportPolicies();
+```
+
+#### Import Policies into Database
+
+```typescript
+import { loadAndValidatePoliciesFromFile } from 'abac-engine';
+
+async function importPolicies() {
+  const { policies } = await loadAndValidatePoliciesFromFile('./policies.json');
+
+  for (const policy of policies) {
+    await prisma.abacPolicy.upsert({
+      where: { id: policy.id },
+      update: policy,
+      create: policy
+    });
+  }
+
+  console.log(`Imported ${policies.length} policies`);
+}
+
+await importPolicies();
 ```
 
 ### With Caching
@@ -391,6 +536,15 @@ const policies2 = await getPolicies(); // Uses cache
 
 // Invalidate when policies change
 cache.invalidate();
+
+// Example: Cache with file-based policies
+const fileCache = new PolicyCache(60); // 1 minute TTL
+
+async function getCachedPolicies() {
+  return await fileCache.get(async () => {
+    return await loadPoliciesFromFile('./policies.json');
+  });
+}
 ```
 
 ## Real-World Examples

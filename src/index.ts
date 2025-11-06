@@ -78,21 +78,25 @@ export {
 
 // Policy loader utilities (optional helpers)
 export {
+  exportPoliciesToJSON,
+  exportPolicyToJSON,
   filterPoliciesByTarget,
   groupPoliciesByEffect,
   loadAndValidatePoliciesFromFile,
   loadPoliciesFromFile,
   loadPoliciesFromJSON,
   PolicyCache,
-  prismaAdapter
+  prismaAdapter,
+  saveAndValidatePoliciesToFile,
+  saveAndValidatePolicyToFile,
+  savePoliciesToFile,
+  savePolicyToFile
 } from './abac/policyLoaders';
 
 /**
- * Package version and metadata
+ * Package version for runtime introspection
  */
-export const VERSION = '2.0.0';
-export const ENGINE_TYPE = 'ABAC';
-export const SUPPORTED_POLICY_VERSIONS = ['1.0.0', '2.0.0'];
+export const VERSION = '1.1.0';
 
 /**
  * Quick start helpers for common ABAC scenarios

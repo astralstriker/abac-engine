@@ -1,6 +1,6 @@
 {
   "name": "abac-engine",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "True Attribute-Based Access Control (ABAC) engine for Node.js - Authorization decisions based purely on attributes",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -81,9 +81,9 @@
   "files": [
     "dist/**/*",
     "README.md",
-    "POLICY_GUIDE.md",
     "CHANGELOG.md",
-    "LICENSE"
+    "LICENSE",
+    "docs/**/*"
   ],
   "engines": {
     "node": ">=16.0.0",
